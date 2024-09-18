@@ -1,14 +1,24 @@
-
-function getMonday(d) {
-  d = new Date(d);
-  var day = d.getDay(),
-    diff = d.getDate() - day + (day == 0 ? -6 : 1); // adjust when day is sunday
-  return new Date(d.setDate(diff));
+function getFirstMondayOfMonth(year, month) {
+  const firstDayOfMonth = new Date(year, month, 1);
+  const dayOfWeek = firstDayOfMonth.getDay();
+  const diff = 1 - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+  return new Date(firstDayOfMonth.setDate(diff));
 }
 
-function getLday(d) {
-  var day = +Intl.DateTimeFormat("zh-TW-u-ca-chinese", { day: "numeric" }).format(d).match(/\d+/)[0];
+function getLunarDay(date) {
+  const day = +Intl.DateTimeFormat("zh-TW-u-ca-chinese", { day: "numeric" }).format(date).match(/\d+/)[0];
   return day;
+}
+
+function getZodiacYear(year) {
+  const zodiac = ["Tý", "Sửu", "Dần", "Mão", "Thìn", "Tỵ", "Ngọ", "Mùi", "Thân", "Dậu", "Tuất", "Hợi"];
+  return zodiac[(year - 4) % 12];
+}
+
+function getCanChiYear(year) {
+  const can = ["Giáp", "Ất", "Bính", "Đinh", "Mậu", "Kỷ", "Canh", "Tân", "Nhâm", "Quý"];
+  const chi = ["Tý", "Sửu", "Dần", "Mão", "Thìn", "Tỵ", "Ngọ", "Mùi", "Thân", "Dậu", "Tuất", "Hợi"];
+  return can[(year - 4) % 10] + " " + chi[(year - 4) % 12];
 }
 
 class LunarCalendar extends HTMLElement {
@@ -22,26 +32,17 @@ class LunarCalendar extends HTMLElement {
       this.appendChild(card);
     }
 
-    //const entityId = this.config.entity;
-    //const state = hass.states[entityId];
-    //const stateStr = state ? state.state : 'unavailable';
     const date = new Date();
-    const ddd = getMonday(date);
-
-    //ddd.getDate();
-    var day = [], lday = [];
-    day[0] = ddd.getDate(); lday[0] = getLday(ddd);
-    ddd.setDate(ddd.getDate() + 1); day[1] = ddd.getDate(); lday[1] = getLday(ddd);
-    ddd.setDate(ddd.getDate() + 1); day[2] = ddd.getDate(); lday[2] = getLday(ddd);
-    ddd.setDate(ddd.getDate() + 1); day[3] = ddd.getDate(); lday[3] = getLday(ddd);
-    ddd.setDate(ddd.getDate() + 1); day[4] = ddd.getDate(); lday[4] = getLday(ddd);
-    ddd.setDate(ddd.getDate() + 1); day[5] = ddd.getDate(); lday[5] = getLday(ddd);
-    ddd.setDate(ddd.getDate() + 1); day[6] = ddd.getDate(); lday[6] = getLday(ddd);
-
-    var act = date.getDay();
-    if (act == 0) act = 7; else act = act;
-
-    var today = Intl.DateTimeFormat("vi-VN", { weekday: "long" }).format(date);
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const dayOfWeekText = Intl.DateTimeFormat("vi-VN", { weekday: "long" }).format(date);
+    const dayOfMonth = date.getDate();
+    const lunarMonth = Intl.DateTimeFormat("zh-TW-u-ca-chinese", { month: "numeric" }).format(date);
+    const lunarDay = getLunarDay(date);
+    const zodiacYear = getZodiacYear(year);
+    const canChiYear = getCanChiYear(year);
+    const firstMonday = getFirstMondayOfMonth(year, month);
+    const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
     var m='';
     var currdate = (new Date()).toLocaleDateString('en-GB'),
     m = +Intl.DateTimeFormat("zh-TW-u-ca-chinese", { month: "numeric" }).format(date),
@@ -79,7 +80,9 @@ class LunarCalendar extends HTMLElement {
         }[x];
     }),
     y = Intl.DateTimeFormat("zh-TW-u-ca-chinese", {year: "numeric"}).format(date).replace(/\d+/gu, '').replace(/年|甲|乙|丙|丁|戊|己|庚|辛|壬|癸|子|丑|寅|卯|辰|巳|午|未|申|酉|戌|亥/gu, function (x) {
+
         return {
+
             年: "",
             甲: "Giáp ",
             乙: "Ất ",
@@ -106,133 +109,120 @@ class LunarCalendar extends HTMLElement {
         }[x];
     });
     };
-
-    this.content.innerHTML = `
+    let html = `
       <div class="ldate">
-        <div class="day">
-          ${today}
+        <div class="info">
+          <div>${dayOfWeekText}, ${dayOfMonth}/${month + 1}/${year}</div>
+          <div>${lunarDay}/${m} (${canChiYear})</div>
         </div>
-        <div class="date">
-          <div class="date1">${currdate}</div>
-          <div class="date2">${d}.${m} ${y}</div>
-        </div>
-        <div class="week">
-          <div class="we">
-            <div class="we0">TH 2</div>
-            <div class="we1">${day[0]}</div>
-            <div class="we2">${lday[0]}</div>
-          </div>
-          <div class="we">
-            <div class="we0">TH 3</div>
-            <div class="we1">${day[1]}</div>
-            <div class="we2">${lday[1]}</div>
-          </div>
-          <div class="we act">
-            <div class="we0">TH 4</div>
-            <div class="we1">${day[2]}</div>
-            <div class="we2">${lday[2]}</div>
-          </div>
-          <div class="we">
-            <div class="we0">TH 5</div>
-            <div class="we1">${day[3]}</div>
-            <div class="we2">${lday[3]}</div>
-          </div>
-          <div class="we">
-            <div class="we0">TH 6</div>
-            <div class="we1">${day[4]}</div>
-            <div class="we2">${lday[4]}</div>
-          </div>
-          <div class="we">
-            <div class="we0">TH 7</div>
-            <div class="we1">${day[5]}</div>
-            <div class="we2">${lday[5]}</div>
-          </div>
-          <div class="we red">
-            <div class="we0">CN</div>
-            <div class="we1">${day[6]}</div>
-            <div class="we2">${lday[6]}</div>
-          </div>
+        <div class="week">`;
 
+    for (let i = 0; i < lastDayOfMonth; i++) {
+      const currentDate = new Date(year, month, i + 1);
+      const lunarDay = getLunarDay(currentDate);
+      const dayOfWeek = currentDate.getDay();
+      const dayOfWeekText = Intl.DateTimeFormat("vi-VN", { weekday: "long" }).format(currentDate);
+      const isToday = currentDate.toDateString() === date.toDateString();
+
+      html += `
+        <div class="we ${dayOfWeek === 0 ? 'red' : ''} ${isToday ? 'today' : ''}">
+          <div class="we0">${dayOfWeekText}</div>
+          <div class="we1">${currentDate.getDate()}</div>
+          <div class="we2">${lunarDay}</div>
+        </div>`;
+    }
+
+    html += `
         </div>
       </div>
-            <style>
-        body{
-          font-family: arial;
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          --background-color: #fff; /* Light background color */
+          --text-color: #333; /* Dark text color */
+          --border-color: #ccc; /* Border color */
+          --shadow-color: rgba(0, 0, 0, 0.1); /* Light shadow color */
         }
-        .ldate{
+        
+        @media (prefers-color-scheme: dark) {
+          body {
+            --background-color: #333; /* Dark background color */
+            --text-color: #fff; /* Light text color */
+            --border-color: #555; /* Dark border color */
+            --shadow-color: rgba(0, 0, 0, 0.6); /* Dark shadow color */
+          }
+        }
+        
+        .ldate {
           margin: auto;
           position: relative;
+          border: 2px solid var(--border-color);
+          border-radius: 10px;
+          box-shadow: 0 4px 8px var(--shadow-color);
         }
-        .ldate .day{
-          font-size:3em;
-          line-height: 70px;
-          padding-left:10px;
-        }
-        .ldate .date{
-          position: absolute;
-              right: 10px;
-    top: 12px;
-          text-align: right;
-        }
-        .ldate .date .date1{
-          font-size: 1.5em;
-        }
-        .ldate .date .date2{
-          color:#A2A2A2;
-        }
-        .ldate .week{
-          box-shadow: 0 0 20px 11px #00000008;
-        }
-        .ldate .week:after{
-          content: ' ';
-          display: block;
-          clear: both;
-        }
-        .ldate .week .we{
-          width:14.28%;
-          float: left;
+        
+        .ldate .info {
+          font-size: 1.2em;
           text-align: center;
+          margin-bottom: 10px;
+          background-color: var(--background-color);
+          border-top-left-radius: 10px;
+          border-top-right-radius: 10px;
+          padding: 10px;
         }
-        .ldate .week .we0{
+        
+        .ldate .week {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          background-color: var(--background-color);
+          border-bottom-left-radius: 10px;
+          border-bottom-right-radius: 10px;
+          padding: 10px;
+        }
+        
+        .ldate .we {
+          width: calc(100% / 7);
+          text-align: center;
+          padding: 10px 0;
+        }
+        
+        .ldate .we0 {
           font-size: 0.8em;
-          padding: 10px 0 10px;
-          color:#A2A2A2;
+          color: #A2A2A2;
         }
-        .ldate .week .we.red .we0{
-          color:#F05A5A;
+        
+        .ldate .we.red .we0 {
+          color: #FF0000;
         }
-        .ldate .week .we1{
-          font-size: 1.5em;
+        
+        .ldate .we1 {
+          font-size: 1.2em;
         }
-        .ldate .week .we2{
+        
+        .ldate .we2 {
           font-size: 0.8em;
-          padding:5px 0 10px;
-          color:#A2A2A2;
+          color: #A2A2A2;
         }
-
-        .ldate .week .we:nth-child(${act}){
+        
+        .ldate .we.today {
           background-color: #639FED;
-          color:#fff;
+          color: #ffffff;
         }
-        .ldate .week .we:nth-child(${act}),
-        .ldate .week .we:nth-child(${act}).red .we0,
-        .ldate .week .we:nth-child(${act}) .we0,
-        .ldate .week .we:nth-child(${act}) .we2{
-          color:#fff;
+        
+        .ldate .we.today .we1,
+        .ldate .we.today .we2,
+        .ldate .we.today .we0 {
+          color: #ffffff;
         }
-      </style>
-    `;
+
+      </style>`;
+
+    this.content.innerHTML = html;
   }
 
-  setConfig(config) {
-    //if (!config.entity) {
-    //throw new Error('You need to define an entity');
-    //}
-    //this.config = config;
-  }
+  setConfig(config) {}
 
-  // The height of your card. Home Assistant uses this to automatically
-  // distribute all cards over the available columns.
   getCardSize() {
     return 3;
   }
